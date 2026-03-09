@@ -69,6 +69,9 @@
                     <input type="url" id="originalUrl"
                         placeholder="Paste your long URL here... e.g., https://example.com/very-long-url" required>
                 </div>
+                <div class="input-group small">
+                    <input type="number" id="maxClicks" min="1" placeholder="Max clicks (optional)">
+                </div>
                 <button type="submit" id="shortenBtn" class="btn-primary">Shorten Link</button>
             </form>
             <div id="errorMsg" class="error-msg"></div>
@@ -103,7 +106,12 @@
                             <th>Original URL</th>
                             <th>Short URL</th>
                             <th>Clicks</th>
+                            <th>Limit</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Accessed</th>
                             <th>Popularity</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="linksBody">

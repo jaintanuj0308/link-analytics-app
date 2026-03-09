@@ -149,6 +149,10 @@ body {
     flex: 1;
 }
 
+.input-group.small {
+    max-width: 160px;
+}
+
 .input-icon {
     position: absolute;
     left: 1rem;
@@ -382,6 +386,36 @@ tr:hover td {
 .copy-icon-btn:hover {
     background: #F3F4F6;
     color: var(--primary);
+}
+
+.toggle-btn, .edit-btn {
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.toggle-btn:hover, .edit-btn:hover {
+    background: #E9EFFB;
+}
+
+.status-enabled {
+    color: #065F46;
+    background: #DCFCE7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.status-disabled {
+    color: #9CA3AF;
+    background: #F3F4F6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
 }
 
 .badge-clicks {

@@ -1,14 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     const shortenForm = document.getElementById('shortenForm');
     const originalUrlInput = document.getElementById('originalUrl');
+    const maxClicksInput = document.getElementById('maxClicks');
     const errorMsg = document.getElementById('errorMsg');
     const resultBox = document.getElementById('resultBox');
     const shortUrlDisplay = document.getElementById('shortUrlDisplay');
     const copyBtn = document.getElementById('copyBtn');
     const linksBody = document.getElementById('linksBody');
     const totalLinksCount = document.getElementById('totalLinksCount');
+    const shortenBtn = document.getElementById('shortenBtn');
 
-    const API_BASE = window.location.origin;
+    // API_BASE points to server API routes
+    const API_BASE = window.location.origin + '/api';
 
     // Load dashboard on startup
     loadDashboard();
@@ -17,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     shortenForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const url = originalUrlInput.value.trim();
+        const maxClicksRaw = maxClicksInput ? maxClicksInput.value.trim() : '';
+        const maxClicks = maxClicksRaw ? parseInt(maxClicksRaw, 10) : undefined;
 
         // Basic validation
         if (!url) {
@@ -39,10 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
         shortenBtn.disabled = true;
 
         try {
+            const payload = { originalUrl: url };
+            if (typeof maxClicks === 'number' && !Number.isNaN(maxClicks)) payload.maxClicks = maxClicks;
+
             const response = await fetch(`${API_BASE}/shorten`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ originalUrl: url })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -51,8 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Show result with animation
                 resultBox.classList.remove('hidden');
 
-                shortUrlDisplay.href = data.shortUrl;
-                shortUrlDisplay.textContent = data.shortUrl;
+                // Display root-level short URL (redirects handled at root)
+                const shortRoot = `${window.location.origin}/${data.id}`;
+                shortUrlDisplay.href = shortRoot;
+                shortUrlDisplay.textContent = shortRoot;
 
                 // Refresh dashboard to show new link
                 loadDashboard();
@@ -82,20 +92,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event delegation for table copy buttons
     linksBody.addEventListener('click', (e) => {
-        const btn = e.target.closest('.copy-icon-btn');
-        if (!btn) return;
+        // Copy
+        const copyBtnEl = e.target.closest('.copy-icon-btn');
+        if (copyBtnEl) {
+            const urlToCopy = copyBtnEl.getAttribute('data-url');
+            if (urlToCopy) {
+                const originalHTML = copyBtnEl.innerHTML;
+                copyBtnEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    setTimeout(() => {
+                        copyBtnEl.innerHTML = originalHTML;
+                    }, 1500);
+                }).catch(err => console.error('Copy failed', err));
+            }
+            return;
+        }
 
-        const urlToCopy = btn.getAttribute('data-url');
-        if (urlToCopy) {
-            const originalHTML = btn.innerHTML;
-            // Change SVG to checkmark temporarily
-            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        // Toggle enable/disable
+        const toggleBtn = e.target.closest('.toggle-btn');
+        if (toggleBtn) {
+            const id = toggleBtn.getAttribute('data-id');
+            const current = toggleBtn.getAttribute('data-enabled') === 'true';
+            toggleBtn.disabled = true;
+            fetch(`${API_BASE}/links/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: !current })
+            }).then(r => r.json()).then(() => {
+                loadDashboard();
+            }).catch(err => console.error(err)).finally(() => toggleBtn.disabled = false);
+            return;
+        }
 
-            navigator.clipboard.writeText(urlToCopy).then(() => {
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                }, 2000);
-            }).catch(err => console.error('Copy failed', err));
+        // Edit destination
+        const editBtn = e.target.closest('.edit-btn');
+        if (editBtn) {
+            const id = editBtn.getAttribute('data-id');
+            const currentUrl = editBtn.getAttribute('data-url');
+            const newUrl = prompt('Update destination URL (must start with http/https):', currentUrl);
+            if (newUrl && newUrl.startsWith('http')) {
+                editBtn.disabled = true;
+                fetch(`${API_BASE}/links/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ originalUrl: newUrl })
+                }).then(r => r.json()).then(() => loadDashboard()).catch(err => console.error(err)).finally(() => editBtn.disabled = false);
+            } else if (newUrl !== null) {
+                alert('Invalid URL. Must start with http or https.');
+            }
+            return;
         }
     });
 
@@ -122,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.className = 'link-row';
                 tr.style.animationDelay = `${index * 0.05}s`;
 
-                const shortUrl = `${API_BASE}/${link.id}`;
+                const shortUrl = `${window.location.origin}/${link.id}`;
 
                 // Calculate percentage (avoid division by 0)
                 const popularPct = maxClicks > 0 ? (link.clicks / maxClicks) * 100 : 0;
@@ -144,10 +189,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>
                         <span class="badge-clicks">${link.clicks}</span>
                     </td>
+                    <td>
+                        ${link.maxClicks !== null ? link.maxClicks : '—'}
+                    </td>
+                    <td>
+                        ${link.enabled ? '<span class="status-enabled">Enabled</span>' : '<span class="status-disabled">Disabled</span>'}
+                    </td>
+                    <td>
+                        ${formatDate(link.createdAt)}
+                    </td>
+                    <td>
+                        ${link.lastAccessed ? formatDate(link.lastAccessed) : '—'}
+                    </td>
                     <td class="popularity-cell">
                         <div class="progress-bar-bg" title="${popularPct.toFixed(1)}% compared to max">
                             <div class="progress-bar-fill" style="width: 0%" data-target-width="${popularPct}%"></div>
                         </div>
+                    </td>
+                    <td>
+                        <button class="toggle-btn" data-id="${link.id}" data-enabled="${link.enabled}">${link.enabled ? 'Disable' : 'Enable'}</button>
+                        <button class="edit-btn" data-id="${link.id}" data-url="${link.originalUrl}">Edit</button>
                     </td>
                 `;
                 linksBody.appendChild(tr);
@@ -181,6 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => {
             console.error('Failed to copy', err);
         });
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleString();
+        } catch (e) {
+            return iso;
+        }
     }
 
     function showError(msg) {

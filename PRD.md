@@ -24,7 +24,7 @@ Developers, marketing teams, or everyday users who need an efficient and simple 
 - **Requirement**: Provide a concise tabular view of link data, containing Original URL, Shortened URL, and Click Count.
 - **Implementation**: Exposed via `index.html`, consuming the `GET /links` API. Uses polling or manual fetch triggers (e.g., after link generation) to update without a refresh.
 
-### 3.5 Persistence
+### 3.5 Persistenc  e
 - **Requirement**: Preserve link data across server restarts and page refreshes.
 - **Implementation**: File-based persistence utilizing a `database.json` file. Read and written dynamically upon modifications.
 
