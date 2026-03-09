@@ -47,13 +47,53 @@
     </div>
 
     <main class="content">
+        <!-- Auth Modals -->
+        <div id="authModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" id="closeAuthModal">&times;</span>
+                <div id="loginForm">
+                    <h2>Login</h2>
+                    <form id="loginFormEl">
+                        <div class="input-group">
+                            <input type="text" id="loginUsername" placeholder="Username" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="loginPassword" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
+                    <p class="auth-switch">Don't have an account? <a href="#" id="showRegister">Register</a></p>
+                </div>
+                <div id="registerForm" style="display: none;">
+                    <h2>Register</h2>
+                    <form id="registerFormEl">
+                        <div class="input-group">
+                            <input type="text" id="regUsername" placeholder="Username (min 3 chars)" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="regPassword" placeholder="Password (min 3 chars)" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Register</button>
+                    </form>
+                    <p class="auth-switch">Already have an account? <a href="#" id="showLogin">Login</a></p>
+                </div>
+            </div>
+        </div>
+
         <header class="top-header fade-in">
             <div class="header-text">
                 <h1>Overview</h1>
                 <p>Welcome back! Here's your link performance.</p>
             </div>
-            <div class="user-profile">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=4F46E5&color=fff" alt="User">
+            <div class="user-actions">
+                <div id="loggedOutView">
+                    <button id="loginBtn" class="btn-secondary">Login</button>
+                    <button id="registerBtn" class="btn-primary">Register</button>
+                </div>
+                <div id="loggedInView" style="display: none;">
+                    <span id="userNameDisplay"></span>
+                    <button id="logoutBtn" class="btn-secondary">Logout</button>
+                </div>
             </div>
         </header>
 
