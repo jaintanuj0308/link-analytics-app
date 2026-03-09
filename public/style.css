@@ -2,8 +2,8 @@
     --bg-body: #F3F4F6;
     --bg-card: #FFFFFF;
     --bg-sidebar: #111827;
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
+    --primary: #EF4444;
+    --primary-hover: #DC2626;
     --text-main: #111827;
     --text-muted: #6B7280;
     --text-inverse: #FFFFFF;
@@ -412,7 +412,7 @@ tr:hover td {
 
 .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #60A5FA, #4F46E5);
+    background: linear-gradient(90deg, #F87171, #EF4444);
     border-radius: 999px;
     width: 0%;
     transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
