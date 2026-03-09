@@ -10,11 +10,181 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalLinksCount = document.getElementById('totalLinksCount');
     const shortenBtn = document.getElementById('shortenBtn');
 
+    // Auth elements
+    const authModal = document.getElementById('authModal');
+    const closeAuthModal = document.getElementById('closeAuthModal');
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loggedOutView = document.getElementById('loggedOutView');
+    const loggedInView = document.getElementById('loggedInView');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const loginFormEl = document.getElementById('loginFormEl');
+    const registerFormEl = document.getElementById('registerFormEl');
+    const showRegister = document.getElementById('showRegister');
+    const showLogin = document.getElementById('showLogin');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
     // API_BASE points to server API routes
     const API_BASE = window.location.origin + '/api';
 
+    // Auth token storage
+    let authToken = localStorage.getItem('authToken');
+    let currentUser = localStorage.getItem('currentUser');
+
+    // Check auth state on load
+    checkAuthState();
+
     // Load dashboard on startup
     loadDashboard();
+
+    // ============ AUTH HANDLERS ============
+
+    // Open auth modal for login
+    loginBtn?.addEventListener('click', () => {
+        authModal.style.display = 'flex';
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+    });
+
+    // Open auth modal for register
+    registerBtn?.addEventListener('click', () => {
+        authModal.style.display = 'flex';
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+    });
+
+    // Close modal
+    closeAuthModal?.addEventListener('click', () => {
+        authModal.style.display = 'none';
+    });
+
+    // Close modal on outside click
+    authModal?.addEventListener('click', (e) => {
+        if (e.target === authModal) {
+            authModal.style.display = 'none';
+        }
+    });
+
+    // Switch to register
+    showRegister?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+    });
+
+    // Switch to login
+    showLogin?.addEventListener('click', (e) => {
+        e.preventDefault();
+        registerForm.style.display = 'none';
+        loginForm.style.display = 'block';
+    });
+
+    // Login form submission
+    loginFormEl?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const response = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                authToken = data.token;
+                currentUser = data.username;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', currentUser);
+                authModal.style.display = 'none';
+                checkAuthState();
+                loadDashboard();
+            } else {
+                alert(data.error || 'Login failed');
+            }
+        } catch (error) {
+            alert('Network error. Make sure the server is running.');
+        }
+    });
+
+    // Register form submission
+    registerFormEl?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value;
+
+        try {
+            const response = await fetch(`${API_BASE}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Registration successful! Please login.');
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            } else {
+                alert(data.error || 'Registration failed');
+            }
+        } catch (error) {
+            alert('Network error. Make sure the server is running.');
+        }
+    });
+
+    // Logout
+    logoutBtn?.addEventListener('click', async () => {
+        try {
+            await fetch(`${API_BASE}/logout`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        checkAuthState();
+        loadDashboard();
+        // Redirect to home page
+        window.location.href = window.location.origin;
+    });
+
+    // Check auth state and update UI
+    function checkAuthState() {
+        if (authToken && currentUser) {
+            loggedOutView.style.display = 'none';
+            loggedInView.style.display = 'flex';
+            userNameDisplay.textContent = `Hello, ${currentUser}`;
+        } else {
+            loggedOutView.style.display = 'flex';
+            loggedInView.style.display = 'none';
+        }
+    }
+
+    // Get auth headers
+    function getAuthHeaders() {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        return headers;
+    }
+
+    // ============ LINK HANDLERS ============
 
     // Form submission
     shortenForm.addEventListener('submit', async (e) => {
